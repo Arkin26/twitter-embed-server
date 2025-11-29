@@ -1,7 +1,6 @@
 from flask import Flask, render_template_string, request
 import os
 
-
 app = Flask(__name__)
 
 HTML_TEMPLATE = """
@@ -10,17 +9,22 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
 
-    <!-- EMBED META TAGS -->
+    <!-- REQUIRED FOR DISCORD TO UNFURL -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="theme-color" content="#1d9bf0">
+
+    <!-- GENERAL OG TAGS -->
     <meta property="og:title" content="{{ title }}">
     <meta property="og:description" content="{{ text[:200] }}">
 
     {% if image_url %}
     <meta property="og:image" content="{{ image_url }}">
+    <meta name="twitter:image" content="{{ image_url }}">
     {% endif %}
 
     {% if video_url %}
     <meta property="og:video" content="{{ video_url }}">
-    <meta property="og:type" content="video.other">
+    <meta property="og:video:type" content="video/mp4">
     <meta property="twitter:player" content="{{ video_url }}">
     {% endif %}
 
@@ -107,7 +111,6 @@ HTML_TEMPLATE = """
 </html>
 """
 
-
 @app.route("/")
 def tweet_embed():
 
@@ -142,4 +145,3 @@ def tweet_embed():
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
     app.run(host="0.0.0.0", port=port)
-
