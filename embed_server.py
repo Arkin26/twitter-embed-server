@@ -23,14 +23,15 @@ HTML_TEMPLATE = """
     {% endif %}
 
     {% if video_url %}
-<meta property="og:type" content="video.other">
-<meta property="og:video" content="{{ video_url }}">
-<meta property="og:video:url" content="{{ video_url }}">
-<meta property="og:video:secure_url" content="{{ video_url }}">
-<meta property="og:video:type" content="video/mp4">
-<meta property="og:video:width" content="720">
-<meta property="og:video:height" content="1280">
-{% endif %}
+    <meta property="og:type" content="video.other">
+    <meta property="og:video" content="{{ video_url }}">
+    <meta property="og:video:url" content="{{ video_url }}">
+    <meta property="og:video:secure_url" content="{{ video_url }}">
+    <meta property="og:video:type" content="video/mp4">
+    <meta property="og:video:width" content="720">
+    <meta property="og:video:height" content="1280">
+    {% endif %}
+
 
 
     <title>{{ title }}</title>
