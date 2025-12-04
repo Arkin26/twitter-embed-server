@@ -1,153 +1,108 @@
-from flask import Flask, render_template_string, request
-import os
+from flask import Flask, request, Response, render_template_string
 
 app = Flask(__name__)
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
 
-    <!-- REQUIRED FOR DISCORD TO UNFURL -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="theme-color" content="#1d9bf0">
+<!-- REQUIRED FOR DISCORD -->
+<meta property="og:site_name" content="Ahazek Embed">
+<meta property="og:title" content="{{ title }}">
+<meta property="og:description" content="{{ text[:200] }}">
 
-    <!-- GENERAL OG TAGS -->
-    <meta property="og:title" content="{{ title }}">
-    <meta property="og:description" content="{{ text[:200] }}">
+<!-- IMPORTANT: URL OF THIS PAGE -->
+<meta property="og:url" content="{{ request.url }}">
 
-    {% if image_url %}
-    <meta property="og:image" content="{{ image_url }}">
-    <meta name="twitter:image" content="{{ image_url }}">
-    {% endif %}
+<!-- FOR IMAGE THUMBNAIL -->
+{% if image_url %}
+<meta property="og:image" content="{{ image_url }}">
+<meta name="twitter:image" content="{{ image_url }}">
+{% endif %}
 
-    {% if video_url %}
-    <meta property="og:type" content="video.other">
-    <meta property="og:video" content="{{ video_url }}">
-    <meta property="og:video:url" content="{{ video_url }}">
-    <meta property="og:video:secure_url" content="{{ video_url }}">
-    <meta property="og:video:type" content="video/mp4">
-    <meta property="og:video:width" content="720">
-    <meta property="og:video:height" content="1280">
-    {% endif %}
+<!-- FOR VIDEO -->
+{% if video_url %}
+<meta property="og:type" content="video.other">
+<meta property="og:video" content="{{ video_url }}">
+<meta property="og:video:url" content="{{ video_url }}">
+<meta property="og:video:secure_url" content="{{ video_url }}">
+<meta property="og:video:type" content="video/mp4">
+<meta property="og:video:width" content="720">
+<meta property="og:video:height" content="1280">
 
+<!-- REQUIRED FOR DISCORD VIDEO -->
+<meta name="twitter:card" content="player">
+<meta name="twitter:player" content="{{ video_url }}">
+<meta name="twitter:player:width" content="720">
+<meta name="twitter:player:height" content="1280">
+{% endif %}
 
+<title>{{ title }}</title>
 
-    <title>{{ title }}</title>
+<style>
+body {
+  background: #0f1419;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  padding: 20px;
+}
+.container {
+  max-width: 600px;
+  margin: auto;
+  background: #1a1d21;
+  padding: 20px;
+  border-radius: 14px;
+}
+video, img {
+  width: 100%;
+  border-radius: 10px;
+}
+</style>
 
-    <style>
-        body {
-            background: #0f1419;
-            color: #e7e9ea;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: #192734;
-            border-radius: 16px;
-            padding: 16px;
-            border: 1px solid #38444d;
-        }
-        .name { font-weight: 700; font-size: 16px; }
-        .handle { color: #8899a6; font-size: 14px; margin-bottom: 10px; }
-
-        .text {
-            font-size: 20px;
-            line-height: 1.35;
-            white-space: pre-wrap;
-            margin-bottom: 14px;
-        }
-
-        .media-container {
-            margin-top: 14px;
-            border-radius: 12px;
-            overflow: hidden;
-            background: #000;
-        }
-        video, img {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-
-        .metrics {
-            display: flex;
-            gap: 16px;
-            margin-top: 14px;
-            padding-top: 14px;
-            border-top: 1px solid #38444d;
-            color: #8899a6;
-            font-size: 14px;
-        }
-        .metric { display: flex; gap: 6px; align-items: center; }
-    </style>
 </head>
-
 <body>
-    <div class="container">
-        <div class="name">{{ name }}</div>
-        <div class="handle">@{{ handle }}</div>
 
-        <div class="text">{{ text }}</div>
+<div class="container">
+  <h2>{{ title }}</h2>
+  <p>{{ text }}</p>
 
-        {% if video_url %}
-        <div class="media-container">
-            <video controls playsinline preload="none">
-                <source src="{{ video_url }}" type="video/mp4">
-            </video>
-        </div>
-        {% elif image_url %}
-        <div class="media-container">
-            <img src="{{ image_url }}">
-        </div>
-        {% endif %}
+  {% if video_url %}
+  <video controls playsinline preload="none">
+    <source src="{{ video_url }}" type="video/mp4">
+  </video>
+  {% elif image_url %}
+  <img src="{{ image_url }}">
+  {% endif %}
+</div>
 
-        <div class="metrics">
-            <div class="metric">💬 <strong>{{ replies }}</strong></div>
-            <div class="metric">🔄 <strong>{{ retweets }}</strong></div>
-            <div class="metric">❤️ <strong>{{ likes }}</strong></div>
-            <div class="metric">👁️ <strong>{{ views }}</strong></div>
-        </div>
-    </div>
 </body>
 </html>
 """
 
 @app.route("/")
-def tweet_embed():
-
+def embed():
     title = request.args.get("title", "Tweet")
-    name = request.args.get("name", "User")
-    handle = request.args.get("handle", "user")
+    name = request.args.get("name", "")
+    handle = request.args.get("handle", "")
     text = request.args.get("text", "")
-
-    video_url = request.args.get("video")
     image_url = request.args.get("image")
+    video_url = request.args.get("video")
 
-    likes = request.args.get("likes", 0)
-    retweets = request.args.get("retweets", 0)
-    replies = request.args.get("replies", 0)
-    views = request.args.get("views", 0)
-
-    return render_template_string(
-        HTML_TEMPLATE,
-        title=title,
-        name=name,
-        handle=handle,
-        text=text,
-        video_url=video_url,
-        image_url=image_url,
-        likes=likes,
-        retweets=retweets,
-        replies=replies,
-        views=views,
+    return (
+        render_template_string(
+            HTML_TEMPLATE,
+            title=title,
+            text=text,
+            image_url=image_url,
+            video_url=video_url,
+            request=request
+        ),
+        200,
+        {"Content-Type": "text/html"}
     )
 
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 8000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=8000)
